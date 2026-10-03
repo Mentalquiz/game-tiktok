@@ -10,11 +10,11 @@
     
     /* Punteggi Squadre */
     .vs-container { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 40px; margin-bottom: 50px; }
-    .team-card { width: 42%; text-align: center; background: rgba(20,20,30,0.9); border-radius: 30px; padding: 20px; border: 5px solid #333; }
+    .team-card { width: 42%; text-align: center; background: rgba(20,20,30,0.9); border-radius: 30px; padding: 20px; border: 5px solid #333; min-height: 180px; display: flex; flex-direction: column; justify-content: center; }
     .team-red { border-color: #ff0055; box-shadow: 0 0 35px rgba(255,0,85,0.5); }
     .team-blue { border-color: #0099ff; box-shadow: 0 0 35px rgba(0,153,255,0.5); }
     
-    .team-title { font-size: 40px; font-weight: 900; word-break: break-word; }
+    .team-title { font-size: 40px; font-weight: 900; word-break: break-word; min-height: 48px; }
     .team-red .team-title { color: #ff0055; }
     .team-blue .team-title { color: #0099ff; }
     
@@ -37,15 +37,15 @@
 </head>
 <body>
 
-  <!-- Punteggi Squadre e Nomi Dinamici -->
+  <!-- Punteggi Squadre e Nomi Dinamici da TikFinity -->
   <div class="vs-container">
     <div class="team-card team-red">
-      <div class="team-title" id="team1-name">TEAM 1</div>
+      <div class="team-title" id="team1-name"></div>
       <div class="team-score" id="score-red">0</div>
     </div>
     <div class="vs-badge">VS</div>
     <div class="team-card team-blue">
-      <div class="team-title" id="team2-name">TEAM 2</div>
+      <div class="team-title" id="team2-name"></div>
       <div class="team-score" id="score-blue">0</div>
     </div>
   </div>
@@ -63,15 +63,15 @@
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       
-      // Aggiornamento nomi squadre se inviati da TikFinity
-      if (data.event === 'config') {
+      // Aggiornamento dinamico nomi squadre inviati da TikFinity
+      if (data.event === 'config' || data.type === 'config') {
         if (data.team1) document.getElementById('team1-name').innerText = data.team1;
         if (data.team2) document.getElementById('team2-name').innerText = data.team2;
       }
 
-      // Gestione Regali
-      if (data.event === 'gift') {
-        const giftCoins = data.diamonds * data.repeatCount;
+      // Gestione Regali ed Eventi
+      if (data.event === 'gift' || data.type === 'gift') {
+        const giftCoins = (data.diamonds || 1) * (data.repeatCount || 1);
         const team = data.team || (Math.random() > 0.5 ? 'red' : 'blue');
         addPoints(team, giftCoins, data.profilePictureUrl);
       }
@@ -79,7 +79,7 @@
 
     function addPoints(team, points, avatarUrl) {
       const scoreEl = document.getElementById(`score-${team}`);
-      let currentScore = parseInt(scoreEl.innerText);
+      let currentScore = parseInt(scoreEl.innerText) || 0;
       scoreEl.innerText = currentScore + points;
 
       const arena = document.getElementById('arena');
