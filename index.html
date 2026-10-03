@@ -3,103 +3,76 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TikTok LIVE VS Battle</title>
+  <title>TikTok LIVE VS Battle Arena</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial Black', sans-serif; user-select: none; }
-    body { background: #050508; color: #fff; width: 1080px; height: 1920px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 40px 20px; }
-    
-    /* Timer e Header */
-    .top-bar { text-align: center; margin-top: 40px; }
-    .timer-box { background: #111; border: 4px solid #ffcc00; border-radius: 20px; padding: 10px 40px; font-size: 70px; font-weight: bold; color: #ffcc00; display: inline-block; box-shadow: 0 0 20px rgba(255, 204, 0, 0.5); }
+    body { background: transparent; color: #fff; width: 1080px; height: 1920px; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 150px; }
     
     /* Punteggi Squadre */
-    .vs-container { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 40px; margin-top: 20px; }
-    .team-card { width: 42%; text-align: center; background: rgba(20,20,30,0.8); border-radius: 25px; padding: 15px; border: 3px solid #333; }
-    .team-red { border-color: #ff0055; box-shadow: 0 0 25px rgba(255,0,85,0.4); }
-    .team-blue { border-color: #0099ff; box-shadow: 0 0 25px rgba(0,153,255,0.4); }
-    .team-logo { width: 100px; height: 100px; object-fit: contain; }
-    .team-score { font-size: 65px; margin-top: 5px; }
-    .vs-badge { font-size: 50px; color: #ffcc00; font-style: italic; background: #222; padding: 10px 20px; border-radius: 50%; border: 3px solid #fff; }
+    .vs-container { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0 40px; margin-bottom: 50px; }
+    .team-card { width: 42%; text-align: center; background: rgba(20,20,30,0.9); border-radius: 30px; padding: 20px; border: 5px solid #333; }
+    .team-red { border-color: #ff0055; box-shadow: 0 0 35px rgba(255,0,85,0.5); }
+    .team-blue { border-color: #0099ff; box-shadow: 0 0 35px rgba(0,153,255,0.5); }
+    
+    .team-title { font-size: 40px; font-weight: 900; word-break: break-word; }
+    .team-red .team-title { color: #ff0055; }
+    .team-blue .team-title { color: #0099ff; }
+    
+    .team-score { font-size: 90px; margin-top: 5px; font-weight: 900; }
+    .vs-badge { font-size: 60px; color: #ffcc00; font-style: italic; background: #222; padding: 15px 25px; border-radius: 50%; border: 4px solid #fff; }
 
     /* Arena Circolare */
-    .arena-section { position: relative; width: 900px; height: 900px; display: flex; align-items: center; justify-content: center; margin: 20px 0; }
-    .ring-fire { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 12px dashed #ff4500; box-shadow: 0 0 50px #ff4500, inset 0 0 50px #ff4500; animation: rotateRing 20s linear infinite; }
+    .arena-section { position: relative; width: 950px; height: 950px; display: flex; align-items: center; justify-content: center; }
+    .ring-fire { position: absolute; width: 100%; height: 100%; border-radius: 50%; border: 16px dashed #ff4500; box-shadow: 0 0 60px #ff4500, inset 0 0 60px #ff4500; animation: rotateRing 20s linear infinite; }
     @keyframes rotateRing { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     
-    .arena-inner { position: absolute; width: 780px; height: 780px; background: radial-gradient(circle, #2a0808 0%, #050508 80%); border-radius: 50%; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 15px; padding: 40px; overflow: hidden; border: 4px solid #ff0055; }
+    .arena-inner { position: absolute; width: 800px; height: 800px; background: radial-gradient(circle, #2a0808 0%, #050508 80%); border-radius: 50%; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 20px; padding: 40px; overflow: hidden; border: 6px solid #ff0055; }
     
-    /* Palline Spettatori/Regali */
-    .avatar-ball { width: 90px; height: 90px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 15px rgba(255,255,255,0.8); animation: popIn 0.3s ease-out; background-size: cover; background-position: center; }
-    .ball-red { border-color: #ff0055; box-shadow: 0 0 20px #ff0055; }
-    .ball-blue { border-color: #0099ff; box-shadow: 0 0 20px #0099ff; }
+    /* Palline Spettatori */
+    .avatar-ball { width: 130px; height: 130px; border-radius: 50%; border: 6px solid #fff; box-shadow: 0 0 25px rgba(255,255,255,0.8); animation: popIn 0.3s ease-out; background-size: cover; background-position: center; }
+    .ball-red { border-color: #ff0055; box-shadow: 0 0 25px #ff0055; }
+    .ball-blue { border-color: #0099ff; box-shadow: 0 0 25px #0099ff; }
     @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-
-    /* Indicatore Regali ai lati */
-    .gift-sidebar { position: absolute; top: 350px; display: flex; flex-direction: column; gap: 20px; font-size: 24px; font-weight: bold; }
-    .gift-left { left: 20px; text-align: left; color: #ff0055; }
-    .gift-right { right: 20px; text-align: right; color: #0099ff; }
-    .gift-item { background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 12px; border: 1px solid #444; }
-
-    /* Spazio WebCam in Basso */
-    .webcam-space { width: 800px; height: 450px; border: 4px dashed #ffcc00; border-radius: 20px; display: flex; align-items: center; justify-content: center; color: #ffcc00; font-size: 30px; background: rgba(0,0,0,0.5); margin-bottom: 20px; }
   </style>
 </head>
 <body>
 
-  <!-- Timer -->
-  <div class="top-bar">
-    <div class="timer-box" id="timer">1:30</div>
-  </div>
-
-  <!-- Punteggi Squadre -->
+  <!-- Punteggi Squadre e Nomi Dinamici -->
   <div class="vs-container">
     <div class="team-card team-red">
-      <div style="font-size: 28px; color: #ff0055;">BARCELLONA</div>
+      <div class="team-title" id="team1-name">TEAM 1</div>
       <div class="team-score" id="score-red">0</div>
     </div>
     <div class="vs-badge">VS</div>
     <div class="team-card team-blue">
-      <div style="font-size: 28px; color: #0099ff;">REAL MADRID</div>
+      <div class="team-title" id="team2-name">TEAM 2</div>
       <div class="team-score" id="score-blue">0</div>
     </div>
   </div>
 
-  <!-- Arena di gioco -->
+  <!-- Arena di gioco per le palline -->
   <div class="arena-section">
-    <!-- Menu Regali Sinistra -->
-    <div class="gift-sidebar gift-left">
-      <div class="gift-item">🌹 +20</div>
-      <div class="gift-item">🍩 +300</div>
-      <div class="gift-item">🧢 +1500</div>
-    </div>
-
     <div class="ring-fire"></div>
-    <div class="arena-inner" id="arena">
-      <!-- Le palline dei regali appariranno qui -->
-    </div>
-
-    <!-- Menu Regali Destra -->
-    <div class="gift-sidebar gift-right">
-      <div class="gift-item">+20 🌹</div>
-      <div class="gift-item">+300 🍩</div>
-      <div class="gift-item">+1500 🧢</div>
-    </div>
-  </div>
-
-  <!-- Area WebCam (Posiziona la cam sopra questo rettangolo in Studio) -->
-  <div class="webcam-space">
-    RISERVATO WEBCAM (Posiziona la Camera qui)
+    <div class="arena-inner" id="arena"></div>
   </div>
 
   <script>
-    // Connessione TikFinity WebSocket
-    const ws = new WebSocket('ws://localhost:21213/'); // Porta standard TikFinity
+    // Connessione WebSocket TikFinity
+    const ws = new WebSocket('ws://localhost:21213/');
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      
+      // Aggiornamento nomi squadre se inviati da TikFinity
+      if (data.event === 'config') {
+        if (data.team1) document.getElementById('team1-name').innerText = data.team1;
+        if (data.team2) document.getElementById('team2-name').innerText = data.team2;
+      }
+
+      // Gestione Regali
       if (data.event === 'gift') {
         const giftCoins = data.diamonds * data.repeatCount;
-        const team = data.team || (Math.random() > 0.5 ? 'red' : 'blue'); // Assegnazione team
+        const team = data.team || (Math.random() > 0.5 ? 'red' : 'blue');
         addPoints(team, giftCoins, data.profilePictureUrl);
       }
     };
@@ -109,15 +82,13 @@
       let currentScore = parseInt(scoreEl.innerText);
       scoreEl.innerText = currentScore + points;
 
-      // Aggiungi avatar nell'arena
       const arena = document.getElementById('arena');
       const ball = document.createElement('div');
       ball.className = `avatar-ball ball-${team}`;
       if (avatarUrl) ball.style.backgroundImage = `url('${avatarUrl}')`;
       arena.appendChild(ball);
 
-      // Limita palline a schermo
-      if (arena.children.length > 25) arena.removeChild(arena.firstChild);
+      if (arena.children.length > 15) arena.removeChild(arena.firstChild);
     }
   </script>
 </body>
