@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok LIVE VS Battle Game Overlay</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Teko:wght@500;700&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        teko: ['Teko', 'sans-serif'],
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        teamRed: '#ff2a5f',
+                        teamBlue: '#00d2ff',
+                        darkBg: '#0b0c10',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: transparent;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .neon-glow-red {
+            box-shadow: 0 0 20px rgba(255, 42, 95, 0.6), inset 0 0 15px rgba(255, 42, 95, 0.4);
+            text-shadow: 0 0 10px rgba(255, 42, 95, 0.8);
+        }
+
+        .neon-glow-blue {
+            box-shadow: 0 0 20px rgba(0, 210, 255, 0.6), inset 0 0 15px rgba(0, 210, 255, 0.4);
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.8);
+        }
+
+        .glass-panel {
+            background: rgba(15, 17, 26, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Animated Progress Bar Glow */
+        .vs-bar-red {
+            background: linear-gradient(90deg, #ff0055, #ff416c);
+            box-shadow: 0 0 15px #ff0055;
+        }
+
+        .vs-bar-blue {
+            background: linear-gradient(90deg, #00b4db, #00d2ff);
+            box-shadow: 0 0 15px #00d2ff;
+        }
+
+        /* Floating Score Text Animation */
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            50% { transform: translateY(-30px) scale(1.3); }
+            100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+        }
+
+        .float-text {
+            position: absolute;
+            animation: floatUp 1.2s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+            pointer-events: none;
+            font-family: 'Teko', sans-serif;
+            font-weight: bold;
+        }
+
+        /* Ring pulse effect */
+        @keyframes ringPulse {
+            0% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.02); opacity: 0.9; }
+            100% { transform: scale(1); opacity: 0.6; }
+        }
+
+        .ring-animated {
+            animation: ringPulse 3s infinite ease-in-out;
+        }
+
+        /* Screen Shake effect on major gifts */
+        .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+
+        /* Custom Scrollbar for Settings Modal */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between p-4 relative overflow-hidden">
+
+    <!-- TOP HEADER: MATCH TIMER & SCOREBOARD -->
+    <header class="w-full max-w-4xl mx-auto flex flex-col items-center gap-2 z-20">
+        
+        <!-- Timer & VS Emblem Header -->
+        <div class="flex items-center justify-between w-full px-4">
+            <!-- Team 1 Badge -->
+            <div class="flex items-center gap-3">
+                <img id="team1Logo" src="https://placehold.co/80x80/ff2a5f/ffffff?text=FCB" class="w-16 h-16 rounded-full border-2 border-red-500 shadow-lg object-cover" alt="Team 1">
+                <div>
+                    <h2 id="team1NameDisplay" class="text-2xl font-teko tracking-wider uppercase text-white font-bold drop-shadow">BARCELONA</h2>
+                    <span id="team1Wins" class="text-xs bg-red-900/80 text-red-200 px-2 py-0.5 rounded-full border border-red-500/40">14 WINS</span>
+                </div>
+            </div>
+
+            <!-- Timer Box -->
+            <div class="flex flex-col items-center">
+                <div class="glass-panel px-6 py-1 rounded-2xl border border-yellow-500/40 flex flex-col items-center shadow-2xl">
+                    <span class="text-xs text-yellow-400 font-semibold tracking-widest uppercase"><i class="fa-solid fa-trophy mr-1"></i> Match Time</span>
+                    <span id="timerDisplay" class="text-4xl font-teko font-bold text-yellow-300 leading-none tracking-widest">01:30</span>
+                </div>
+            </div>
+
+            <!-- Team 2 Badge -->
+            <div class="flex items-center gap-3 flex-row-reverse text-right">
+                <img id="team2Logo" src="https://placehold.co/80x80/00d2ff/ffffff?text=RMA" class="w-16 h-16 rounded-full border-2 border-blue-400 shadow-lg object-cover" alt="Team 2">
+                <div>
+                    <h2 id="team2NameDisplay" class="text-2xl font-teko tracking-wider uppercase text-white font-bold drop-shadow">REAL MADRID</h2>
+                    <span id="team2Wins" class="text-xs bg-blue-900/80 text-blue-200 px-2 py-0.5 rounded-full border border-blue-500/40">12 WINS</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scores and VS Tug-of-War Bar -->
+        <div class="w-full glass-panel p-3 rounded-2xl border border-white/10 shadow-2xl relative">
+            <div class="flex justify-between items-center mb-1 px-2 font-teko">
+                <span id="team1ScoreDisplay" class="text-4xl font-bold text-red-400 leading-none">0</span>
+                <span class="text-xl text-yellow-400 font-bold tracking-widest bg-yellow-500/20 px-3 py-0.5 rounded-full border border-yellow-500/40">VS</span>
+                <span id="team2ScoreDisplay" class="text-4xl font-bold text-blue-400 leading-none">0</span>
+            </div>
+
+            <!-- Progress Bar Bar -->
+            <div class="w-full bg-gray-900 h-6 rounded-full overflow-hidden flex p-1 border border-white/10 relative">
+                <div id="team1Bar" class="vs-bar-red h-full rounded-l-full transition-all duration-300 w-1/2 flex justify-end items-center pr-2">
+                    <span class="text-[10px] text-white font-bold drop-shadow">50%</span>
+                </div>
+                <div id="team2Bar" class="vs-bar-blue h-full rounded-r-full transition-all duration-300 w-1/2 flex justify-start items-center pl-2">
+                    <span class="text-[10px] text-white font-bold drop-shadow">50%</span>
+                </div>
+            </div>
+        </div>
+
+    </header>
+
+    <!-- MAIN CENTRAL ARENA & GIFT GUIDES -->
+    <div class="flex-1 w-full max-w-6xl mx-auto flex items-center justify-between relative my-2">
+        
+        <!-- Left Side Panel: Gift Points Legend -->
+        <div class="glass-panel p-3 rounded-2xl border border-red-500/30 text-white w-36 flex flex-col gap-2 shadow-xl z-10 text-xs">
+            <div class="text-center font-bold text-red-400 border-b border-red-500/30 pb-1 mb-1 uppercase tracking-wider">
+                <i class="fa-solid fa-gift mr-1"></i> Red Points
+            </div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-1">🌹 Rose</span><span class="font-bold text-green-400">+1</span></div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-1">🍩 Donut</span><span class="font-bold text-green-400">+300</span></div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-1">🧢 Cap</span><span class="font-bold text-green-400">+1500</span></div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-1">🦙 Llama</span><span class="font-bold text-green-400">+2500</span></div>
+            <div class="flex items-center justify-between border-t border-white/10 pt-1 text-yellow-300 font-semibold">
+                <span>👑 Winner</span><span>+5 WINS</span>
+            </div>
+        </div>
+
+        <!-- Central Physics Arena Canvas Container -->
+        <div class="relative flex-1 h-full flex items-center justify-center">
+            
+            <!-- Floating Score Popups Canvas Layer -->
+            <div id="floatingTextContainer" class="absolute inset-0 pointer-events-none z-30"></div>
+
+            <!-- Circular Arena Background Graphics -->
+            <div class="w-[340px] h-[340px] sm:w-[420px] sm:h-[420px] rounded-full border-4 border-dashed border-yellow-500/40 absolute flex items-center justify-center ring-animated pointer-events-none">
+                <div class="w-[85%] h-[85%] rounded-full border-2 border-white/10 bg-gradient-to-br from-red-950/20 via-black/40 to-blue-950/20"></div>
+            </div>
+
+            <!-- Canvas Physics Engine Layer -->
+            <canvas id="arenaCanvas" class="z-20 relative w-[360px] h-[360px] sm:w-[440px] sm:h-[440px]"></canvas>
+        </div>
+
+        <!-- Right Side Panel: Gift Points Legend -->
+        <div class="glass-panel p-3 rounded-2xl border border-blue-500/30 text-white w-36 flex flex-col gap-2 shadow-xl z-10 text-xs">
+            <div class="text-center font-bold text-blue-400 border-b border-blue-500/30 pb-1 mb-1 uppercase tracking-wider">
+                <i class="fa-solid fa-gift mr-1"></i> Blue Points
+            </div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-1">🌹 Rose</span><span class="font-bold text-green-400">+1</span></div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-1">🍩 Donut</span><span class="font-bold text-green-400">+300</span></div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-1">🧢 Cap</span><span class="font-bold text-green-400">+1500</span></div>
+            <div class="flex items-center justify-between"><span class="flex items-center gap-1">🦙 Llama</span><span class="font-bold text-green-400">+2500</span></div>
+            <div class="flex items-center justify-between border-t border-white/10 pt-1 text-yellow-300 font-semibold">
+                <span>👑 Winner</span><span>+5 WINS</span>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM FOOTER & CONTROL PANEL TOGGLE -->
+    <footer class="w-full flex justify-between items-center px-4 z-30">
+        <div class="text-white/40 text-xs font-mono">
+            Status: <span id="wsStatus" class="text-yellow-400">Disconnected (Local Mode)</span>
+        </div>
+        <button id="toggleConfigBtn" class="bg-gray-800 hover:bg-gray-700 text-white text-xs px-3 py-1.5 rounded-lg border border-white/20 transition flex items-center gap-2">
+            <i class="fa-solid fa-gear"></i> Settings / Simulation Panel
+        </button>
+    </footer>
+
+    <!-- CONFIGURATION & TESTING MODAL PANEL (STREAMER PANEL) -->
+    <div id="configModal" class="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 hidden">
+        <div class="glass-panel p-6 rounded-2xl border border-white/20 max-w-xl w-full max-h-[90vh] overflow-y-auto text-white flex flex-col gap-5 shadow-2xl">
+            
+            <div class="flex justify-between items-center border-b border-white/10 pb-3">
+                <h3 class="text-xl font-bold font-teko tracking-wider text-yellow-400"><i class="fa-solid fa-sliders mr-2"></i> Streamer Control & TikFinity Setup</h3>
+                <button id="closeConfigBtn" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+
+            <!-- Quick Test Trigger Buttons -->
+            <div>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Simulate Live Gifts (Testing)</h4>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="p-2 border border-red-500/40 rounded-xl bg-red-950/20 flex flex-col gap-1.5">
+                        <span class="text-xs font-bold text-red-400">Team 1 (Red)</span>
+                        <div class="flex gap-1 flex-wrap">
+                            <button onclick="simulateGift(1, 1, 'Rose')" class="bg-red-600/60 hover:bg-red-600 text-white text-xs px-2 py-1 rounded">+1 Rose</button>
+                            <button onclick="simulateGift(1, 300, 'Donut')" class="bg-red-600/60 hover:bg-red-600 text-white text-xs px-2 py-1 rounded">+300 Donut</button>
+                            <button onclick="simulateGift(1, 1500, 'Cap')" class="bg-red-600/60 hover:bg-red-600 text-white text-xs px-2 py-1 rounded">+1500 Cap</button>
+                        </div>
+                    </div>
+
+                    <div class="p-2 border border-blue-500/40 rounded-xl bg-blue-950/20 flex flex-col gap-1.5">
+                        <span class="text-xs font-bold text-blue-400">Team 2 (Blue)</span>
+                        <div class="flex gap-1 flex-wrap">
+                            <button onclick="simulateGift(2, 1, 'Rose')" class="bg-blue-600/60 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded">+1 Rose</button>
+                            <button onclick="simulateGift(2, 300, 'Donut')" class="bg-blue-600/60 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded">+300 Donut</button>
+                            <button onclick="simulateGift(2, 1500, 'Cap')" class="bg-blue-600/60 hover:bg-blue-600 text-white text-xs px-2 py-1 rounded">+1500 Cap</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Team & Timer Customization -->
+            <div class="grid grid-cols-2 gap-4 border-t border-white/10 pt-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Team 1 Name</label>
+                    <input type="text" id="cfgTeam1Name" value="BARCELONA" class="w-full bg-gray-900 border border-white/20 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-red-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Team 2 Name</label>
+                    <input type="text" id="cfgTeam2Name" value="REAL MADRID" class="w-full bg-gray-900 border border-white/20 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Team 1 Logo URL</label>
+                    <input type="text" id="cfgTeam1Logo" value="https://placehold.co/80x80/ff2a5f/ffffff?text=FCB" class="w-full bg-gray-900 border border-white/20 rounded-lg p-2 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Team 2 Logo URL</label>
+                    <input type="text" id="cfgTeam2Logo" value="https://placehold.co/80x80/00d2ff/ffffff?text=RMA" class="w-full bg-gray-900 border border-white/20 rounded-lg p-2 text-xs text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-1">Match Duration (Seconds)</label>
+                    <input type="number" id="cfgTimer" value="90" class="w-full bg-gray-900 border border-white/20 rounded-lg p-2 text-sm text-white">
+                </div>
+            </div>
+
+            <!-- TikFinity / WebSocket Settings -->
+            <div class="border-t border-white/10 pt-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">TikFinity Integration Connection</h4>
+                <div class="flex gap-2">
+                    <input type="text" id="wsUrlInput" placeholder="ws://localhost:21213/ (TikFinity WS Port)" value="ws://localhost:21213" class="flex-1 bg-gray-900 border border-white/20 rounded-lg p-2 text-xs text-white">
+                    <button id="connectWsBtn" class="bg-yellow-600 hover:bg-yellow-500 text-white text-xs px-4 py-2 rounded-lg font-bold">Connect WS</button>
+                </div>
+                <p class="text-[11px] text-gray-400 mt-1">
+                    Tip: TikFinity or local TikTok live tools send webhooks or WebSockets. This browser source automatically parses events like <code>{ team: 1, points: 300, user: "John" }</code>.
+                </p>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex justify-between items-center border-t border-white/10 pt-3">
+                <button onclick="resetMatch()" class="bg-red-800 hover:bg-red-700 text-white text-xs px-4 py-2 rounded-lg">Reset Match & Scores</button>
+                <button id="saveConfigBtn" class="bg-green-600 hover:bg-green-500 text-white text-xs px-5 py-2 rounded-lg font-bold">Apply & Close Settings</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // State Management Variables
+        let state = {
+            team1Score: 0,
+            team2Score: 0,
+            team1Wins: 14,
+            team2Wins: 12,
+            team1Name: 'BARCELONA',
+            team2Name: 'REAL MADRID',
+            matchDuration: 90, // seconds
+            timeLeft: 90,
+            timerInterval: null,
+            isMatchActive: false
+        };
+
+        // Canvas & Physics Variables
+        const canvas = document.getElementById('arenaCanvas');
+        const ctx = canvas.getContext('2d');
+        let tokens = []; // Physics circles representing voter gifts
+
+        // Resize Canvas dynamically
+        function initCanvas() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        }
+        window.addEventListener('resize', initCanvas);
+        initCanvas();
+
+        // Token / Particle Physics Class
+        class Token {
+            constructor(team, avatarUrl = null) {
+                this.team = team; // 1 or 2
+                this.radius = Math.random() * 8 + 14;
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                
+                // Spawn near team sides
+                this.x = team === 1 ? centerX - 60 + (Math.random() * 30) : centerX + 60 - (Math.random() * 30);
+                this.y = centerY + (Math.random() * 60 - 30);
+                
+                this.vx = (Math.random() - 0.5) * 4;
+                this.vy = (Math.random() - 0.5) * 4;
+                this.color = team === 1 ? '#ff2a5f' : '#00d2ff';
+                
+                // Avatar image loading (if provided by user gift)
+                this.image = null;
+                if(avatarUrl) {
+                    this.image = new Image();
+                    this.image.src = avatarUrl;
+                }
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Circular Boundary Collision Logic
+                const centerX = canvas.width / 2;
+                const centerY = canvas.height / 2;
+                const maxRadius = (canvas.width / 2) - this.radius - 5;
+
+                const dx = this.x - centerX;
+                const dy = this.y - centerY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist > maxRadius) {
+                    const angle = Math.atan2(dy, dx);
+                    this.x = centerX + Math.cos(angle) * maxRadius;
+                    this.y = centerY + Math.sin(angle) * maxRadius;
+                    this.vx *= -0.8;
+                    this.vy *= -0.8;
+                }
+
+                // Damping
+                this.vx *= 0.99;
+                this.vy *= 0.99;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.shadowColor = this.color;
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                if (this.image && this.image.complete) {
+                    ctx.clip();
+                    ctx.drawImage(this.image, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+                }
+                ctx.restore();
+            }
+        }
+
+        // Add visual physics tokens
+        function spawnTokens(team, count = 1, avatarUrl = null) {
+            const maxTokens = 60; // Cap to keep render performance smooth
+            if (tokens.length > maxTokens) {
+                tokens.splice(0, count);
+            }
+            for (let i = 0; i < Math.min(count, 10); i++) {
+                tokens.push(new Token(team, avatarUrl));
+            }
+        }
+
+        // Canvas Main Render Loop
+        function animateCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Handle token collisions with each other
+            for (let i = 0; i < tokens.length; i++) {
+                for (let j = i + 1; j < tokens.length; j++) {
+                    const t1 = tokens[i];
+                    const t2 = tokens[j];
+                    const dx = t2.x - t1.x;
+                    const dy = t2.y - t1.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < t1.radius + t2.radius) {
+                        // Simple elastic bouncy response
+                        const angle = Math.atan2(dy, dx);
+                        const targetX = t1.x + Math.cos(angle) * (t1.radius + t2.radius);
+                        const targetY = t1.y + Math.sin(angle) * (t1.radius + t2.radius);
+                        const ax = (targetX - t2.x) * 0.05;
+                        const ay = (targetY - t2.y) * 0.05;
+
+                        t1.vx -= ax;
+                        t1.vy -= ay;
+                        t2.vx += ax;
+                        t2.vy += ay;
+                    }
+                }
+                tokens[i].update();
+                tokens[i].draw();
+            }
+
+            requestAnimationFrame(animateCanvas);
+        }
+
+        // Audio Synth Effects (Zero external audio dependency)
+        function playPointSound(isBigGift = false) {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = isBigGift ? 'triangle' : 'sine';
+                osc.frequency.setValueAtTime(isBigGift ? 587.33 : 440, audioCtx.currentTime); // D5 or A4
+                osc.frequency.exponentialRampToValueAtTime(isBigGift ? 880 : 660, audioCtx.currentTime + 0.2);
+                
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            } catch(e) { /* Audio context safety block */ }
+        }
+
+        // Trigger Floating "+300" score text animation
+        function createFloatingText(team, text) {
+            const container = document.getElementById('floatingTextContainer');
+            const el = document.createElement('div');
+            el.className = `float-text text-3xl font-bold ${team === 1 ? 'text-red-400 drop-shadow-[0_0_10px_rgba(255,42,95,0.8)]' : 'text-blue-400 drop-shadow-[0_0_10px_rgba(0,210,255,0.8)]'}`;
+            el.innerText = text;
+
+            // Positioning based on team side
+            const rect = container.getBoundingClientRect();
+            const posX = team === 1 ? rect.width * 0.35 + (Math.random() * 40 - 20) : rect.width * 0.65 + (Math.random() * 40 - 20);
+            const posY = rect.height * 0.5 + (Math.random() * 40 - 20);
+
+            el.style.left = `${posX}px`;
+            el.style.top = `${posY}px`;
+
+            container.appendChild(el);
+            setTimeout(() => el.remove(), 1200);
+        }
+
+        // Update Score and Tug of War Bar
+        function addPoints(team, points, giftName = "Gift", userAvatar = null) {
+            if (team === 1) {
+                state.team1Score += points;
+            } else {
+                state.team2Score += points;
+            }
+
+            // Visual FX
+            createFloatingText(team, `+${points} ${giftName}`);
+            spawnTokens(team, Math.min(Math.ceil(points / 50), 5), userAvatar);
+            playPointSound(points >= 300);
+
+            if (points >= 1500) {
+                document.body.classList.add('shake');
+                setTimeout(() => document.body.classList.remove('shake'), 500);
+            }
+
+            updateScoreboardUI();
+        }
+
+        // Render UI Elements
+        function updateScoreboardUI() {
+            document.getElementById('team1ScoreDisplay').innerText = state.team1Score.toLocaleString();
+            document.getElementById('team2ScoreDisplay').innerText = state.team2Score.toLocaleString();
+
+            const total = state.team1Score + state.team2Score;
+            let team1Percent = 50;
+            let team2Percent = 50;
+
+            if (total > 0) {
+                team1Percent = Math.round((state.team1Score / total) * 100);
+                team2Percent = 100 - team1Percent;
+            }
+
+            const bar1 = document.getElementById('team1Bar');
+            const bar2 = document.getElementById('team2Bar');
+
+            bar1.style.width = `${team1Percent}%`;
+            bar2.style.width = `${team2Percent}%`;
+
+            bar1.querySelector('span').innerText = `${team1Percent}%`;
+            bar2.querySelector('span').innerText = `${team2Percent}%`;
+        }
+
+        // Match Timer Loop
+        function startMatchTimer() {
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.isMatchActive = true;
+
+            state.timerInterval = setInterval(() => {
+                if (state.timeLeft <= 0) {
+                    endMatch();
+                    return;
+                }
+                state.timeLeft--;
+                
+                const minutes = Math.floor(state.timeLeft / 60);
+                const seconds = state.timeLeft % 60;
+                document.getElementById('timerDisplay').innerText = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // End Match & Declare Winner
+        function endMatch() {
+            clearInterval(state.timerInterval);
+            state.isMatchActive = false;
+
+            let winnerText = "DRAW!";
+            if (state.team1Score > state.team2Score) {
+                state.team1Wins++;
+                winnerText = `${state.team1Name} WINS!`;
+            } else if (state.team2Score > state.team1Score) {
+                state.team2Wins++;
+                winnerText = `${state.team2Name} WINS!`;
+            }
+
+            document.getElementById('team1Wins').innerText = `${state.team1Wins} WINS`;
+            document.getElementById('team2Wins').innerText = `${state.team2Wins} WINS`;
+
+            // Display Winner Popup Banner
+            const banner = document.createElement('div');
+            banner.className = 'fixed inset-0 flex items-center justify-center bg-black/70 z-50 animate-bounce';
+            banner.innerHTML = `
+                <div class="glass-panel p-8 rounded-3xl border-2 border-yellow-400 text-center flex flex-col items-center">
+                    <h1 class="text-6xl font-teko font-bold text-yellow-400 tracking-widest drop-shadow">🏆 ${winnerText} 🏆</h1>
+                    <p class="text-gray-300 text-sm mt-2">Starting next round in 5 seconds...</p>
+                </div>
+            `;
+            document.body.appendChild(banner);
+
+            setTimeout(() => {
+                banner.remove();
+                resetMatch();
+            }, 5000);
+        }
+
+        // Reset Match State
+        function resetMatch() {
+            state.team1Score = 0;
+            state.team2Score = 0;
+            state.timeLeft = state.matchDuration;
+            tokens = [];
+            updateScoreboardUI();
+            const minutes = Math.floor(state.timeLeft / 60);
+            const seconds = state.timeLeft % 60;
+            document.getElementById('timerDisplay').innerText = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            startMatchTimer();
+        }
+
+        // Listeners for TikFinity / Local WebSockets or Window PostMessages
+        function initTikFinityIntegration() {
+            // 1. Window Message Event Listener (For iframe or postMessage triggers)
+            window.addEventListener('message', (event) => {
+                if (!event.data) return;
+                const data = event.data;
+                // Standard gift event schema
+                if (data.type === 'gift' || data.team) {
+                    addPoints(data.team || 1, data.points || 1, data.giftName || 'Gift', data.avatar);
+                }
+            });
+
+            // 2. Local WebSocket Listener (Connecting to TikFinity or local TikTok Live connector)
+            const wsUrlInput = document.getElementById('wsUrlInput');
+            const connectBtn = document.getElementById('connectWsBtn');
+            const wsStatus = document.getElementById('wsStatus');
+
+            connectBtn.addEventListener('click', () => {
+                const url = wsUrlInput.value.trim();
+                if (!url) return;
+
+                wsStatus.innerText = "Connecting...";
+                wsStatus.className = "text-yellow-400";
+
+                try {
+                    const socket = new WebSocket(url);
+
+                    socket.onopen = () => {
+                        wsStatus.innerText = "Connected to TikFinity";
+                        wsStatus.className = "text-green-400 font-bold";
+                    };
+
+                    socket.onmessage = (event) => {
+                        try {
+                            const payload = JSON.parse(event.data);
+                            // Parse standard TikFinity or TikTok Live events
+                            if (payload.event === 'gift' || payload.giftId) {
+                                const team = payload.team || (Math.random() > 0.5 ? 1 : 2); // default auto-assign if not configured
+                                const pts = payload.diamondCount || payload.points || 1;
+                                addPoints(team, pts, payload.giftName || 'Gift', payload.profilePictureUrl);
+                            }
+                        } catch (e) {
+                            console.log('WS Message parse error', e);
+                        }
+                    };
+
+                    socket.onerror = () => {
+                        wsStatus.innerText = "Connection Failed";
+                        wsStatus.className = "text-red-400";
+                    };
+
+                } catch (err) {
+                    wsStatus.innerText = "Invalid WS URL";
+                    wsStatus.className = "text-red-400";
+                }
+            });
+        }
+
+        // Global function for manual testing buttons
+        window.simulateGift = function(team, points, giftName) {
+            addPoints(team, points, giftName);
+        };
+
+        // UI Control Modal Bindings
+        document.getElementById('toggleConfigBtn').addEventListener('click', () => {
+            document.getElementById('configModal').classList.remove('hidden');
+        });
+
+        document.getElementById('closeConfigBtn').addEventListener('click', () => {
+            document.getElementById('configModal').classList.add('hidden');
+        });
+
+        document.getElementById('saveConfigBtn').addEventListener('click', () => {
+            // Apply Configuration changes
+            state.team1Name = document.getElementById('cfgTeam1Name').value || 'TEAM 1';
+            state.team2Name = document.getElementById('cfgTeam2Name').value || 'TEAM 2';
+            state.matchDuration = parseInt(document.getElementById('cfgTimer').value) || 90;
+
+            document.getElementById('team1NameDisplay').innerText = state.team1Name;
+            document.getElementById('team2NameDisplay').innerText = state.team2Name;
+            document.getElementById('team1Logo').src = document.getElementById('cfgTeam1Logo').value;
+            document.getElementById('team2Logo').src = document.getElementById('cfgTeam2Logo').value;
+
+            document.getElementById('configModal').classList.add('hidden');
+            resetMatch();
+        });
+
+        // Initialize Application
+        window.onload = function() {
+            animateCanvas();
+            startMatchTimer();
+            initTikFinityIntegration();
+        };
+    </script>
+</body>
+</html>
